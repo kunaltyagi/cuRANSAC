@@ -36,7 +36,7 @@ class CircleDetect
      * @param[in] numIterations Number of iterations of RANSAC
      */
     void RANSAC(Mat &image, std::vector<Vec3f> &circles, double canny_threshold, double circle_threshold, int numIterations);
-      
+
     /**
      * @brief Groups concentric circles detected using RANSAC
      * @param[in] circles Detected circles
@@ -45,4 +45,4 @@ class CircleDetect
     std::vector<std::vector<Vec3f> > group_concentric(std::vector<Vec3f> circles);
 };
 
-#endif	//CIRCLE_DETECT_HPP
+#endif  //CIRCLE_DETECT_HPP

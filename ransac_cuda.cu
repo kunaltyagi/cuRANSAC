@@ -38,7 +38,7 @@ void ransac_kernel(int** consensus_set_x, int** consensus_set_y,
     if(threadIdx.x == 0 )
     printf("A B C : %d %d %d\n", iA, iB, iC);
 #endif
-    
+
     AB = norm3df(consensus_set_x[contour_id][iA] - consensus_set_x[contour_id][iB],
                  consensus_set_y[contour_id][iA] - consensus_set_y[contour_id][iB], 0.0);
     BC = norm3df(consensus_set_x[contour_id][iB] - consensus_set_x[contour_id][iC],
@@ -84,7 +84,7 @@ void ransac_kernel(int** consensus_set_x, int** consensus_set_y,
     m_pb_BC = -1/m_BC;
     b_pb_AB = y_mp_AB - m_pb_AB*x_mp_AB;
     b_pb_BC = y_mp_BC - m_pb_BC*x_mp_BC;
-    
+
     iter_result[threadIdx.x].cx = (b_pb_AB - b_pb_BC)/(m_pb_BC - m_pb_AB + 0.0001);
     iter_result[threadIdx.x].cy = m_pb_AB*iter_result[threadIdx.x].cx + b_pb_AB;
     iter_result[threadIdx.x].radius = norm3df(iter_result[threadIdx.x].cx - consensus_set_x[contour_id][iA],
@@ -160,10 +160,10 @@ void launch_ransac_kernels(int** points_x, int** points_y, ransac_common_params*
     cudaMalloc((void **)&dev_common_params, sizeof(ransac_common_params));
     cudaMalloc((void **)&dev_contour_params, common_params->num_contours*sizeof(ransac_contour_params));
     cudaMalloc((void **)&dev_ransac_result, common_params->num_contours*sizeof(ransac_result));
-    
+
     cudaMalloc((void **)&dev_points_x, common_params->num_contours*sizeof(int *));
     cudaMalloc((void **)&dev_points_y, common_params->num_contours*sizeof(int *));
-    
+
     for (i = 0; i < common_params->num_contours; i++)
     {
         cudaMalloc(&dummy_points_x[i], contour_params[i].consensus_size*sizeof(int));
@@ -182,7 +182,7 @@ void launch_ransac_kernels(int** points_x, int** points_y, ransac_common_params*
         cudaMemcpy(dummy_points_x[i], points_x[i], contour_params[i].consensus_size*sizeof(int), cudaMemcpyHostToDevice);
         cudaMemcpy(dummy_points_y[i], points_y[i], contour_params[i].consensus_size*sizeof(int), cudaMemcpyHostToDevice);
     }
-    
+
     printf("%d %d %f\n", result->cx, result->cy, result->radius);
     if (cudaSuccess == cudaMemcpy(result, dev_ransac_result, common_params->num_contours*sizeof(ransac_result), cudaMemcpyDeviceToHost))
     {
@@ -195,7 +195,7 @@ void launch_ransac_kernels(int** points_x, int** points_y, ransac_common_params*
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) 
             printf("Error: %s\n", cudaGetErrorString(err));
-    
+
 //    printf("%d %d %f\n", result->cx, result->cy, result->radius);
     if (cudaSuccess == cudaMemcpy(result, dev_ransac_result, common_params->num_contours*sizeof(ransac_result), cudaMemcpyDeviceToHost))
     {
@@ -205,7 +205,7 @@ void launch_ransac_kernels(int** points_x, int** points_y, ransac_common_params*
     if (err != cudaSuccess) 
             printf("Error: %s\n", cudaGetErrorString(err));
     printf("Center and Radius %d %d %f", result[0].cx, result[0].cy, result[0].radius);
-    
+
     /**
      * Memory Free on GPU
      */

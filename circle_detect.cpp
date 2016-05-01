@@ -1,7 +1,5 @@
 #include <circle_detect.hpp>
 
-#define DEBUG 1
-
 using namespace cv;
 
 CircleDetect::CircleDetect()
@@ -16,7 +14,7 @@ void CircleDetect::RANSAC(Mat &image, std::vector<Vec3f> &circles, double cannyT
     Mat edges;
     Canny(image, edges, MAX(cannyThreshold/2,1), cannyThreshold, 3);
     std::vector<std::vector<Point > > contours;
-    imshow("Edges", edges);    
+    imshow("Edges", edges);
     //waitKey(0);
     findContours(edges,contours,CV_RETR_TREE,CV_CHAIN_APPROX_SIMPLE);
 
@@ -50,7 +48,7 @@ void CircleDetect::RANSAC(Mat &image, std::vector<Vec3f> &circles, double cannyT
     ransacParams.points_threshold = 10;
     ransacParams.max_radius = (int)image.cols/4;
     ransacParams.circle_threshold = circleThreshold;
-    
+
     int i,j;
     if (contours.size() < 200 && contours.size() > 0)
     {
