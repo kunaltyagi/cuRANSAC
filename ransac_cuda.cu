@@ -24,46 +24,59 @@ void ransac_kernel(int** consensus_set_x, int** consensus_set_y,
         result[contour_id].cy = 0;
     }
 
-    unsigned int iA = curand(&state);
-    unsigned int iB = curand(&state);
-    unsigned int iC = curand(&state);
-    iA %= consensus_size;
-    iB %= consensus_size;
-    iC %= consensus_size;
+    unsigned int iA, iB, iC;
     float AB, BC, CA;
     float m_AB, m_BC, b_AB;//, b_BC;
     float x_mp_AB, y_mp_AB, x_mp_BC, y_mp_BC;
     float m_pb_AB, m_pb_BC, b_pb_AB, b_pb_BC;
+    int sub_iter = 0, MAX_SUB_ITER = 10;
+    do
+    {
+        iA = curand(&state);
+        iB = curand(&state);
+        iC = curand(&state);
+        iA %= consensus_size;
+        iB %= consensus_size;
+        iC %= consensus_size;
 #if DEBUG == 1
-    if(threadIdx.x == 0 )
-    printf("A B C : %d %d %d\n", iA, iB, iC);
+        if(threadIdx.x == 0 )
+        printf("A B C : %d %d %d\n", iA, iB, iC);
 #endif
 
-    AB = norm3df(consensus_set_x[contour_id][iA] - consensus_set_x[contour_id][iB],
-                 consensus_set_y[contour_id][iA] - consensus_set_y[contour_id][iB], 0.0);
-    BC = norm3df(consensus_set_x[contour_id][iB] - consensus_set_x[contour_id][iC],
-                 consensus_set_y[contour_id][iB] - consensus_set_y[contour_id][iC], 0.0);
-    CA = norm3df(consensus_set_x[contour_id][iC] - consensus_set_x[contour_id][iA],
-                 consensus_set_y[contour_id][iC] - consensus_set_y[contour_id][iA], 0.0);
+        AB = norm3df(consensus_set_x[contour_id][iA] - consensus_set_x[contour_id][iB],
+                     consensus_set_y[contour_id][iA] - consensus_set_y[contour_id][iB], 0.0);
+        BC = norm3df(consensus_set_x[contour_id][iB] - consensus_set_x[contour_id][iC],
+                     consensus_set_y[contour_id][iB] - consensus_set_y[contour_id][iC], 0.0);
+        CA = norm3df(consensus_set_x[contour_id][iC] - consensus_set_x[contour_id][iA],
+                     consensus_set_y[contour_id][iC] - consensus_set_y[contour_id][iA], 0.0);
 #if DEBUG == 1
-    if(threadIdx.x == 0 && blockIdx.x ==0)
-    {
-        printf("\nA : %d %d\n", consensus_set_x[contour_id][iA], consensus_set_y[contour_id][iA] );
-        printf("B : %d %d\n", consensus_set_x[contour_id][iB], consensus_set_y[contour_id][iB] );
-        printf("C : %d %d\n", consensus_set_x[contour_id][iC], consensus_set_y[contour_id][iC] );
-        printf("AB BC : %f %f\n", AB, BC );
-    }
+        if(threadIdx.x == 0 && blockIdx.x ==0)
+        {
+            printf("\nA : %d %d\n", consensus_set_x[contour_id][iA], consensus_set_y[contour_id][iA] );
+            printf("B : %d %d\n", consensus_set_x[contour_id][iB], consensus_set_y[contour_id][iB] );
+            printf("C : %d %d\n", consensus_set_x[contour_id][iC], consensus_set_y[contour_id][iC] );
+            printf("AB BC : %f %f\n", AB, BC );
+        }
 #endif
-    if(AB < common_params->min_point_separation || BC < common_params->min_point_separation ||
-       CA < common_params->min_point_separation ||
-       AB > common_params->max_point_separation || BC > common_params->max_point_separation ||
-       CA > common_params->max_point_separation )
-    {
+        if(AB < common_params->min_point_separation || BC < common_params->min_point_separation ||
+           CA < common_params->min_point_separation ||
+           AB > common_params->max_point_separation || BC > common_params->max_point_separation ||
+           CA > common_params->max_point_separation )
+        {
 #if DEBUG == 1
-        if(threadIdx.x == 0 && blockIdx.x == 0)
-        printf("\n\tAB, CA, Max pt separation %f %f %f\n", AB, CA, common_params->max_point_separation);// (float)(consensus_set_x[contour_id][iA] - consensus_set_x[contour_id][iB]), consensus_set_x[contour_id][iC] - consensus_set_x[contour_id][iA], common_params->max_point_separation);
+            if(threadIdx.x == 0 && blockIdx.x == 0)
+            printf("\n\tAB, CA, Max pt separation %f %f %f\n", AB, CA, common_params->max_point_separation);// (float)(consensus_set_x[contour_id][iA] - consensus_set_x[contour_id][iB]), consensus_set_x[contour_id][iC] - consensus_set_x[contour_id][iA], common_params->max_point_separation);
 #endif
-        return ;
+            ++sub_iter;
+        }
+        else
+        {
+            break;
+        }
+    } while (sub_iter <= MAX_SUB_ITER);
+    if (sub_iter >= MAX_SUB_ITER)
+    {
+        return;
     }
 
     m_AB = (consensus_set_y[contour_id][iA]-consensus_set_y[contour_id][iB])/(consensus_set_x[contour_id][iA]-consensus_set_x[contour_id][iB] + 0.001);
